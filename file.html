@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+  <title>Dialogo stile Animal Crossing (Canvas)</title>
+  <style>
+    body {
+      margin: 0;
+      background: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    canvas {
+      background-color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+    // Suono stile Animal Crossing generato via Web Audio API
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound() {
+      const oscillator = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(300 + Math.random() * 100, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+      oscillator.connect(gain);
+      gain.connect(audioCtx.destination);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.08);
+    }
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Carica una sola volta l'immagine di sfondo
+    const bg = new Image();
+    let bgLoaded = false;
+    bg.onload = () => {
+      bgLoaded = true;
+      render();
+    };
+    bg.src = "https://i.ibb.co/DDz53M0w/Chat-GPT-Image-Apr-7-2025-at-11-37-52-PM.png";
+
+    // Imposta il canvas per alta risoluzione
+    const scale = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * scale;
+    canvas.height = window.innerHeight * scale;
+    canvas.style.width = window.innerWidth + "px";
+    canvas.style.height = window.innerHeight + "px";
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(scale, scale);
+
+    const dialoghi = [
+      "Frase 1.",
+      "Frase 2.",
+      "Lorem ipsum dolor sit amet et labore"
+    ];
+
+    let dialogIndex = 0;
+    let currentText = "";
+    let charIndex = 0;
+    let isWriting = false;
+
+    const sprite = {
+      width: 120,
+      height: 120,
+      draw: function () {
+        const centerX = (canvas.width / scale - this.width) / 2;
+        const centerY = (canvas.height / scale - this.height) / 2 + 40;
+        ctx.fillStyle = "white";
+        ctx.fillRect(centerX, centerY, this.width, this.height);
+        ctx.strokeStyle = "black";
+        ctx.strokeRect(centerX, centerY, this.width, this.height);
+      }
+    };
+
+    function drawDialogBox(text) {
+      const maxBoxWidth = 600;
+      const maxBoxHeight = 200;
+      const boxWidth = Math.min(maxBoxWidth, canvas.width / scale - 40);
+      const boxHeight = Math.min(maxBoxHeight, canvas.height / scale - 40);
+      const x = (canvas.width / scale - boxWidth) / 2;
+      const y = 20;
+      const radius = 30;
+
+      // Finestra dialogo con angoli arrotondati
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + boxWidth - radius, y);
+      ctx.quadraticCurveTo(x + boxWidth, y, x + boxWidth, y + radius);
+      ctx.lineTo(x + boxWidth, y + boxHeight - radius);
+      ctx.quadraticCurveTo(x + boxWidth, y + boxHeight, x + boxWidth - radius, y + boxHeight);
+      ctx.lineTo(x + radius, y + boxHeight);
+      ctx.quadraticCurveTo(x, y + boxHeight, x, y + boxHeight - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      ctx.fill();
+
+      // Testo
+      ctx.fillStyle = "#222";
+      ctx.font = "22px 'Varela Round', sans-serif";
+      ctx.fillText(text, x + 20, y + 45);
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (bgLoaded) {
+        ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
+      }
+      drawDialogBox(currentText);
+      sprite.draw();
+    }
+
+    function typeText(fullText) {
+      currentText = "";
+      charIndex = 0;
+      isWriting = true;
+
+      const interval = setInterval(() => {
+        currentText += fullText[charIndex];
+        playSound();
+        charIndex++;
+        render();
+
+        if (charIndex >= fullText.length) {
+          clearInterval(interval);
+          isWriting = false;
+        }
+      }, 40);
+    }
+
+    canvas.addEventListener("click", () => {
+      if (isWriting) return;
+
+      if (dialogIndex < dialoghi.length) {
+        typeText(dialoghi[dialogIndex]);
+        dialogIndex++;
+      }
+    });
+
+    // Avvio iniziale
+    typeText(dialoghi[dialogIndex]);
+    dialogIndex++;
+  </script>
+</body>
+</html>
