@@ -11,85 +11,287 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      height: 100%;
+      min-height: 100vh;
+      width: 100%;
+      overflow: hidden;
+      flex-direction: column;
     }
     canvas {
       background-color: #ffffff;
+      display: block;
+    }
+    #restartBtn {
+      position: absolute;
+      display: none;
+      padding: 6px 12px;
+      font-family: 'Varela Round', sans-serif;
+      font-size: 14px;
+      background-color: #fce88b;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
+  <button id="restartBtn">Ricomincia</button>
 
   <script>
-    // Suono stile Animal Crossing generato via Web Audio API
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playSound() {
       const oscillator = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       oscillator.type = 'sine';
       oscillator.frequency.setValueAtTime(300 + Math.random() * 100, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+
+      const now = audioCtx.currentTime;
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.03, now + 0.01);
+      gain.gain.linearRampToValueAtTime(0, now + 0.08);
+
       oscillator.connect(gain);
       gain.connect(audioCtx.destination);
-      oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.08);
+      oscillator.start(now);
+      oscillator.stop(now + 0.1);
     }
+
     const canvas = document.getElementById("gameCanvas");
+canvas.setAttribute("tabindex", "0");
+canvas.focus();
     const ctx = canvas.getContext("2d");
+    const restartBtn = document.getElementById("restartBtn");
 
-    // Carica una sola volta l'immagine di sfondo
-    const bg = new Image();
-    let bgLoaded = false;
-    bg.onload = () => {
-      bgLoaded = true;
-      render();
-    };
-    bg.src = "https://i.ibb.co/DDz53M0w/Chat-GPT-Image-Apr-7-2025-at-11-37-52-PM.png";
+    // spriteImages definito qui una sola volta
+const spriteImages = [
+  "https://raw.githubusercontent.com/gian-astorino/test/main/Sprite%201.png",
+  "https://raw.githubusercontent.com/gian-astorino/test/main/Sprite%202.png",
+  "https://raw.githubusercontent.com/gian-astorino/test/main/Sprite%203.png"
+];
 
-    // Imposta il canvas per alta risoluzione
-    const scale = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth * scale;
-    canvas.height = window.innerHeight * scale;
-    canvas.style.width = window.innerWidth + "px";
-    canvas.style.height = window.innerHeight + "px";
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(scale, scale);
+    const loadedSprites = spriteImages.map(src => {
+      const img = new Image();
+      img.src = src;
+      return img;
+    });
 
     const dialoghi = [
-      "Frase 1.",
-      "Frase 2.",
-      "Lorem ipsum dolor sit amet et labore"
-    ];
+  "Ciao Angela",
+  "È da tanto che volevo parlarti, ma farlo di persona non è troppo possibile…",
+  "Così ho creato questo spazietto, spero non abbia nessun bug.",
+
+  "La prima bozza di questo discorso è nelle mie note dal 2022.",
+  "Sono anni che continuo a tornarci sopra per modificare qualcosa",
+  "ma non sono mai soddisfatto di cosa c’è scritto ogni volta che la rileggo.",
+  "È difficile per me buttar giù le mie emozioni, così ho deciso di cambiare approccio", 
+  "e usare le tue parole per cercare di trasmetterti cio che provo.",
+  "\"Quella che segue è una storia senza un lieto fine, o per lo meno è incompleta\"",
+  "Credo che la prima volta che mi avvicinai a te, era perché mi sentivo molto solo.",
+  "non avevo qualcuno con cui parlare, né amici lì a scuola.",
+  "Pensavo che anche tu ti sentissi un po’ sola lì dentro, così feci il primo passo.",
+
+  "lasciavo a casa il telefono, così avevo la scusa per chiederlo a te",
+  "rompendoti i maroni con la mia musica da tamarro e i miei video su youtube.",
+
+  "Poi le prime cose in comune",
+  "il disegno, i delfini laser malvagi, e i bigliettini passati durante le ore di ancora.",
+  "non l’avrei definita amicizia, no, anche perché sembravi molto infastidita dalla mia compagnia.",
+  "ti infastidivano le mie richieste e le mie battute da quattro soldi.",
+
+  "Non ti biasimo, so di essere un gran cagacazzi.",
+
+  "Ma eravamo piccoli, forse troppo piccoli per portare sulle spalle il peso di ciò che succedeva in quella classe.",
+  "Sapevo che eri l’unica in quel momento che poteva capirmi",
+  "l’unica che disegnava con me, che si metteva una delle cuffie nell’orecchio, l’unica a sopportarmi.",
+  "avevamo tra le mani un semino, il semino del nostro rapporto, un rapporto forzato dalle circostanze.",
+  "era forse terza o quarta superiore",
+  "eravamo entrambi usciti da quella gabbia di ipocriti, pieni di cicatrici, nel mio caso letteralmente …",
+  "e forse proprio per questo abbiamo perso di vista il nostro semino.",
+  "volevamo dimenticarcene, perché sarebbe stata la cosa più semplice mettere da parte cio che ci legava al passato.",
+
+  "mi ricordo quanto ci rimasi male al tuo “ma che vuoi” in risposta a un mio saluto",
+  "e adesso invece non riesco a non sorridere pensandoci.",
+
+  "quel seme doveva sparire, dovevamo lanciarlo lontano",
+  "nessuno dei due avrebbe dovuto ritrovarlo, era per il bene di entrambi, no?",
+  "eppure sono andato a cercarlo, un po’ come sto facendo ora.",
+  "Non so bene cosa mi abbia spinto a farlo.",
+  "come l’ho trovato? facendo un piccolo passo, forse un messaggio su whatsapp",
+  "non ricordo esattamente cosa scrissi, probabilmente qualche cazzata, una scusa.",
+
+  "magari avere bisogno di una penna da muji, infilata con odio nel mio giubbotto con l’ombrello nell’altra mano.",
+  "ero così felice di vederti, vedere quella faccia imbronciata mi riempiva di gioia",
+  "che mascheravo da vero duro indifferente.",
+
+  "avevo ritrovato il nostro semino e notavo che stava crescendo qualcosa",
+  "qualcosa che cercavo di nascondere con il sarcasmo e l’indifferenza, come tu facevi con l’odio.",
+  "una fogliolina.",
+  "da lì abbiamo iniziato ad aprirci, a vederci, a scriverci, ad abbracciarci",
+  "e quel fatidico 4 luglio a baciarci.",
+
+  "sei stata il mio primo vero bacio, non che non ce ne fossero stati altri in passato",
+  "ma quello fu l’unico che mi fece sentire le farfalle nello stomaco.",
+
+  "da quel giorno sono tornato a sentirmi felice.",
+  "andavo a dormire tardi per poterti scrivere",
+  "e non vedevo l’ora di risvegliarmi, aspettando di poterti rivedere.",
+  "iniziammo a raccogliere i frutti del nostro amore,",
+
+  "ma portandoli alla bocca ci accorgemmo che uno era marcio",
+  "poi un altro, e un altro ancora.",
+  "Cosí tanto marcio da rendere impossibile per noi continuare a stare insieme.",
+  "io ero troppo orientato a raggiungere i miei obiettivi, tu eri ancora legata al me del passato.",
+  "tu mi odiavi per quello che pensavi fossi",
+  "e io ti odiavo perché mi stavi trattenendo in quel passato."
+,
+  "credo, però, che non tutto il male venga per nuocere.",
+  "Tu sei riuscita finalmente a entrare in università",
+  "e che io ho ottenuto qualche risultato che tanto inseguivo.",
+
+  "Eppure mi sento così lontano dalla persona che avrei voluto essere.",
+  "Mi guardo allo specchio e non mi riconosco, come se incontrassi uno sconosciuto per strada.",
+  "quando mi chiedono come sto, la mia risposta dovrebbe essere “di merda”.",
+  "ma non c’è nulla nella mia vita che mi dovrebbe far sentire di merda",
+  "quindi rispondo “mai stato meglio”",
+  "Ancora ora, come quando avevo 16 anni",
+  "vado a dormire sperando di non svegliarmi il mattino seguente.",
+  "ogni sera, alle 9:00, inizia a colpirmi un forte senso di tristezza",
+  "malinconia, disgusto.",
+  "Mi ascolto un po’ di musica",
+
+  "e all’improvviso mi vieni in mente tu.",
+
+  "mi viene in mente quanto ti ho fatto stare male",
+  "e quanto ti sto facendo stare male anche adesso",
+  "per via della mia inadeguatezza, della mia arroganza",
+  "del mio malriposto senso di maturità.",
+  "Mi trascino quel pensiero fino a letto e ti sogno, ti sogno di continuo.",
+
+  "Sai vado spesso a sedermi su quelle scale vicino a dove abitavi",
+  "a fissare il tetto del palazzo a cui appartengono",
+  "cercando di ricordare la sensazione della tua mano tra i miei capelli",
+  "il suono della tua voce e il profumo dei tuoi vestiti.",
+
+  "ma la verità è che non so più quale sia il suono della tua voce",
+  "né ricordo il profumo dei tuoi vestiti",
+  "e non riesco a far altro che piangere come un idiota.",
+
+  "Riuscivo a piangere solo con te.",
+  "non perché fossi tu la causa dei miei pianti",
+  "ma perché solo con te sapevo di poter crollare",
+  "essere me stesso senza dover fingere di essere forte.",
+  "Senza dover portare una maschera.",
+
+  "ma anche con te ne ho portate tante.",
+  "ho finto di non volerti nella mia vita",
+  "ho finto di stare bene dopo la nostra rottura",
+  "ho finto di essere forte, ho finto di non amarti.",
+
+  "A 3 anni dalla prima bozza di questa lettera, ho deciso di non fingere più.",
+  "non voglio passare un altro anno portando una maschera.",
+  "Non con te.",
+  "voglio parlarti sinceramente, più di quanto abbia mai fatto.",
+  "E la verità è che non riesco a smettere di pensarti",
+  "di pensare che se fossi stato più maturo le cose sarebbero andate diversamente.",
+
+  "che ti avrei visto sorridere di più, che avremmo litigato meno",
+  "che avresti smesso di odiarti per ciò che ero in passato.",
+  "E ora l’unica cosa che posso fare è sperare.",
+
+  "sperare di riuscire a convincerti di incontrarmi per poterti parlare",
+  "sperare di sentirmi felice vedendo la tua faccia imbronciata ancora una volta",
+  "di piangere con te, di sentire il suono della tua voce e il profumo dei tuoi vestiti",
+  "di avere la tua mano tra i miei capelli.",
+  "Se mai accetterai di vedermi e avrò il coraggio di parlarti",
+  "se mai vorrai leggere queste mie parole, voglio che tu sappia questo.",
+
+  "Sei e sarai per sempre l’unica donna che amo.",
+  "non importa quanto lontani",
+  "non importa quanto ci odiamo o facciamo finta di odiarci.",
+  "quello che provo ancora per te è amore",
+  "ingiustificato",
+  "crudo",
+  "e bruciante amore.",
+  "per sempre tuo",
+  "Gianluca"
+];
 
     let dialogIndex = 0;
     let currentText = "";
     let charIndex = 0;
     let isWriting = false;
+    let currentSpriteIndex = 1;
+    let spriteYPosOffset = -80;
+    let isJumping = false;
+    let jumpHeight = 2;
+    let jumpDuration = 100;
 
     const sprite = {
-      width: 120,
-      height: 120,
+      get width() {
+        return window.innerWidth < 600 ? 130 : 200;
+      },
+      get height() {
+        return this.width;
+      },
       draw: function () {
-        const centerX = (canvas.width / scale - this.width) / 2;
-        const centerY = (canvas.height / scale - this.height) / 2 + 40;
-        ctx.fillStyle = "white";
-        ctx.fillRect(centerX, centerY, this.width, this.height);
-        ctx.strokeStyle = "black";
-        ctx.strokeRect(centerX, centerY, this.width, this.height);
+        const canvasH = canvas.height / (window.devicePixelRatio || 1);
+        const centerX = (canvas.width / (window.devicePixelRatio || 1) - this.width) / 2;
+        const y = canvasH / 2 + 40 + spriteYPosOffset;
+        const image = loadedSprites[currentSpriteIndex];
+        const aspectRatio = image.width / image.height;
+        const targetWidth = this.width;
+        const targetHeight = this.width / aspectRatio;
+        ctx.drawImage(image, centerX, y, targetWidth, targetHeight);
       }
     };
 
+    function resizeCanvas() {
+      const dpi = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * dpi;
+      canvas.height = window.innerHeight * dpi;
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpi, dpi);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function interpolateColor(color1, color2, factor) {
+      const c1 = parseInt(color1.slice(1), 16);
+      const c2 = parseInt(color2.slice(1), 16);
+      const r1 = (c1 >> 16) & 0xff, g1 = (c1 >> 8) & 0xff, b1 = c1 & 0xff;
+      const r2 = (c2 >> 16) & 0xff, g2 = (c2 >> 8) & 0xff, b2 = c2 & 0xff;
+      const r = Math.round(r1 + (r2 - r1) * factor);
+      const g = Math.round(g1 + (g2 - g1) * factor);
+      const b = Math.round(b1 + (b2 - b1) * factor);
+      return `rgb(${r},${g},${b})`;
+    }
+
+    function drawBackground() {
+      const canvasW = canvas.width / (window.devicePixelRatio || 1);
+      const canvasH = canvas.height / (window.devicePixelRatio || 1);
+      const progress = dialogIndex / dialoghi.length;
+      const topColor = interpolateColor("#4393E6", "#0E4779", progress);
+      const bottomColor = interpolateColor("#71C4EB", "#51596B", progress);
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvasH);
+      gradient.addColorStop(0, topColor);
+      gradient.addColorStop(1, bottomColor);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvasW, canvasH);
+    }
+
     function drawDialogBox(text) {
-      const maxBoxWidth = 600;
-      const maxBoxHeight = 200;
-      const boxWidth = Math.min(maxBoxWidth, canvas.width / scale - 40);
-      const boxHeight = Math.min(maxBoxHeight, canvas.height / scale - 40);
-      const x = (canvas.width / scale - boxWidth) / 2;
-      const y = 20;
+      const canvasW = canvas.width / (window.devicePixelRatio || 1);
+      const canvasH = canvas.height / (window.devicePixelRatio || 1);
+      const boxWidth = Math.min(600, canvasW - 40);
+      const boxHeight = Math.min(200, canvasH - 40);
+      const x = (canvasW - boxWidth) / 2;
+      const y = canvasH / 2 - boxHeight / 2 - 160;
       const radius = 30;
 
-      // Finestra dialogo con angoli arrotondati
       ctx.fillStyle = "#ffffff";
       ctx.beginPath();
       ctx.moveTo(x + radius, y);
@@ -104,17 +306,60 @@
       ctx.closePath();
       ctx.fill();
 
-      // Testo
       ctx.fillStyle = "#222";
-      ctx.font = "22px 'Varela Round', sans-serif";
-      ctx.fillText(text, x + 20, y + 45);
+      ctx.font = window.innerWidth < 600 ? "18px 'Varela Round', sans-serif" : "24px 'Varela Round', sans-serif";
+      const words = text.split(' ');
+      let currentLine = '';
+      let lineHeight = 30;
+      let yOffset = y + 45;
+      const paddingX = 20;
+      const paddingBottom = 20;
+
+      words.forEach(word => {
+        const testLine = currentLine + word + ' ';
+        const lineWidth = ctx.measureText(testLine).width;
+        if (lineWidth < boxWidth - paddingX * 2) {
+          currentLine = testLine;
+        } else {
+          ctx.fillText(currentLine, x + paddingX, yOffset);
+          currentLine = word + ' ';
+          yOffset += lineHeight;
+        }
+      });
+
+      if (yOffset + lineHeight <= y + boxHeight - paddingBottom) {
+        ctx.fillText(currentLine, x + paddingX, yOffset);
+      }
+
+      const circleRadius = 16;
+      const circleX = x + boxWidth - 30;
+      const circleY = y + boxHeight - 30;
+
+      if (!isWriting && dialogIndex < dialoghi.length) {
+        ctx.beginPath();
+        ctx.arc(circleX, circleY, circleRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "#fce88b";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(circleX - 5, circleY - 3);
+        ctx.lineTo(circleX + 5, circleY - 3);
+        ctx.lineTo(circleX, circleY + 6);
+        ctx.closePath();
+        ctx.fillStyle = "#000";
+        ctx.fill();
+      }
+
+      if (!isWriting && dialogIndex >= dialoghi.length) {
+        restartBtn.style.left = `${circleX - 40}px`;
+        restartBtn.style.top = `${circleY - 15}px`;
+        restartBtn.style.display = 'inline-block';
+      }
     }
 
     function render() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if (bgLoaded) {
-        ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
-      }
+      drawBackground();
       drawDialogBox(currentText);
       sprite.draw();
     }
@@ -123,13 +368,12 @@
       currentText = "";
       charIndex = 0;
       isWriting = true;
-
+      restartBtn.style.display = 'none';
       const interval = setInterval(() => {
         currentText += fullText[charIndex];
         playSound();
         charIndex++;
         render();
-
         if (charIndex >= fullText.length) {
           clearInterval(interval);
           isWriting = false;
@@ -137,18 +381,73 @@
       }, 40);
     }
 
-    canvas.addEventListener("click", () => {
-      if (isWriting) return;
+    
 
-      if (dialogIndex < dialoghi.length) {
-        typeText(dialoghi[dialogIndex]);
-        dialogIndex++;
-      }
+    
+
+    restartBtn.addEventListener("click", () => {
+      dialogIndex = 0;
+      currentSpriteIndex = 1;
+      restartBtn.style.display = 'none';
+      typeText(dialoghi[dialogIndex++]);
     });
 
-    // Avvio iniziale
-    typeText(dialoghi[dialogIndex]);
-    dialogIndex++;
+    const spriteMap = {
+      3: 0,
+      12: 1,
+      14: 0,
+      18: 1,
+      19: 0,
+      28: 1,
+      30: 0,
+      37: 1,
+      39: 0,
+      40: 0,
+      44: 2,
+      50: 0,
+      53: 2,
+      63: 3,
+      66: 0,
+      69: 3,
+      78: 2,
+      79: 3,
+      84: 0,
+      88: 3,
+      93: 0,
+      98: 3,
+      105: 0,
+      111: 3,
+      117: 0,
+      123: 3,
+      127: 0
+    };
+
+    canvas.addEventListener("click", () => {
+  if (dialogIndex >= dialoghi.length || isWriting) return;
+
+  if (spriteMap.hasOwnProperty(dialogIndex)) {
+    currentSpriteIndex = spriteMap[dialogIndex];
+  }
+
+  typeText(dialoghi[dialogIndex++]);
+  isJumping = true;
+  setTimeout(() => isJumping = false, jumpDuration);
+});
+    function jumpAnimation() {
+      if (isJumping) {
+        spriteYPosOffset -= jumpHeight;
+        setTimeout(() => spriteYPosOffset += jumpHeight, jumpDuration / 2);
+      }
+    }
+
+    function animate() {
+      jumpAnimation();
+      render();
+      requestAnimationFrame(animate);
+    }
+
+    typeText(dialoghi[dialogIndex++]);
+    animate();
   </script>
 </body>
 </html>
