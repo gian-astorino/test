@@ -224,17 +224,17 @@ const spriteImages = [
     };
 
     function resizeCanvas() {
-      const dpi = window.devicePixelRatio || 1;
-      const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
-      const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+  const dpi = window.devicePixelRatio || 1;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
 
-      canvas.width = vw * dpi;
-      canvas.height = vh * dpi;
-      canvas.style.width = `${vw}px`;
-      canvas.style.height = `${vh}px`;
+  canvas.width = vw * dpi;
+  canvas.height = vh * dpi;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
 
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.scale(dpi, dpi);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpi, dpi);
     }
 
     window.addEventListener('resize', resizeCanvas);
