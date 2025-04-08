@@ -7,7 +7,7 @@
   <style>
     body {
       margin: 0;
-      background: #ffffff;
+      background: #424242;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -36,7 +36,12 @@
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
-  <button id="restartBtn">Ricomincia</button>
+  <div id="confirmPopup" style="display: none; z-index: 9999; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #424242; color: #ffffff; border-radius: 20px; padding: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); font-family: 'Varela Round', sans-serif; font-size: 24px; text-align: center; max-width: 90%; width: 380px;">
+  <p>Sai, piuttosto che rileggere di nuovo un muro di testo, mi piaceerebbe mi parlassi di persona...</p>
+  <button id="confirmYes" style="margin-right:10px; padding:6px 12px; font-size:24px; border:none; border-radius:12px; background-color:#fce88b; cursor:pointer;">Ricomincia</button>
+  <button id="confirmNo" style="padding:6px 12px; font-size:24px; border:none; border-radius:12px; background-color:#ddd; cursor:pointer;">Stai zitto</button>
+</div>
+<button id="restartBtn">Ricomincia</button>
 
   <script>
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -65,10 +70,9 @@ canvas.focus();
 
     // spriteImages definito qui una sola volta
 const spriteImages = [
-  "https://github.com/gian-astorino/test/blob/main/New%20%20Sprite%201.png?raw=true",
-  "https://github.com/gian-astorino/test/blob/main/New%20%20Sprite%202.png?raw=true",
-  "https://github.com/gian-astorino/test/blob/main/New%20Sprite%203.png?raw=true",
-  "https://github.com/gian-astorino/test/blob/main/New%20%20Sprite%204.png?raw=true"
+  "https://github.com/gian-astorino/test/blob/acc48e633f483212ac501915c8f548292dd0f05d/Sprite%201.png?raw=true",
+  "https://github.com/gian-astorino/test/blob/acc48e633f483212ac501915c8f548292dd0f05d/Sprite%202.png?raw=true",
+  "https://github.com/gian-astorino/test/blob/acc48e633f483212ac501915c8f548292dd0f05d/Sprite%203.png?raw=true"
 ];
 
     const loadedSprites = spriteImages.map(src => {
@@ -79,7 +83,7 @@ const spriteImages = [
 
     const dialoghi = [
 "Ciao Angela",
-"È da tanto che volevo parlarti, ma farlo di persona non è troppo possibile…",
+"È da tanto che volevo parlarti, ma farlo di persona non sembra possibile…",
 "Così ho creato questo spazietto, che cosa cringe eh?",
 "La prima bozza di questo discorso è nelle mie note dal 2022.",
 "Sono anni che continuo a tornarci sopra per modificare qualcosa",
@@ -192,6 +196,7 @@ const spriteImages = [
 "E bruciante amore.",
 "Per sempre tuo",
 "Gianluca"
+
 ];
 
     let dialogIndex = 0;
@@ -230,8 +235,8 @@ const spriteImages = [
 
   canvas.width = vw * dpi;
   canvas.height = vh * dpi;
-  canvas.style.width = '100%';
-  canvas.style.height = '100%';
+  canvas.style.width = `${vw}px`;
+  canvas.style.height = `${vh}px`;
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpi, dpi);
@@ -367,11 +372,29 @@ const spriteImages = [
     
 
     restartBtn.addEventListener("click", () => {
-      dialogIndex = 0;
-      currentSpriteIndex = 1;
-      restartBtn.style.display = 'none';
-      typeText(dialoghi[dialogIndex++]);
-    });
+  const popup = document.getElementById("confirmPopup");
+  popup.style.display = "block";
+  popup.style.left = "50%";
+  popup.style.top = "50%";
+  popup.style.transform = "translate(-50%, -50%)";
+});
+
+const confirmYes = document.getElementById("confirmYes");
+const confirmNo = document.getElementById("confirmNo");
+
+confirmYes.addEventListener("click", () => {
+  const popup = document.getElementById("confirmPopup");
+  popup.style.display = "none";
+  dialogIndex = 0;
+  currentSpriteIndex = 1;
+  restartBtn.style.display = 'none';
+  typeText(dialoghi[dialogIndex++]);
+});
+
+confirmNo.addEventListener("click", () => {
+  const popup = document.getElementById("confirmPopup");
+  popup.style.display = "none";
+});
 
     const spriteMap = {
   0: 1,
