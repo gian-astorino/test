@@ -253,8 +253,8 @@ const spriteImages = [
 
       canvas.width = vw * dpi;
       canvas.height = vh * dpi;
-      canvas.style.width = vw + "px";
-      canvas.style.height = vh + "px";
+      canvas.style.width = '100vw';
+      canvas.style.height = '100vh';
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpi, dpi);
