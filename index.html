@@ -248,10 +248,14 @@ const spriteImages = [
 
     function resizeCanvas() {
       const dpi = window.devicePixelRatio || 1;
-      canvas.width = window.innerWidth * dpi;
-      canvas.height = window.innerHeight * dpi;
-      canvas.style.width = window.innerWidth + "px";
-      canvas.style.height = window.innerHeight + "px";
+      const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+      const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+
+      canvas.width = vw * dpi;
+      canvas.height = vh * dpi;
+      canvas.style.width = vw + "px";
+      canvas.style.height = vh + "px";
+
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpi, dpi);
     }
