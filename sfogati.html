@@ -41,10 +41,9 @@ const scale = 0.2;
 let spriteSize = { width: 100, height: 100 };
 
 let audioCtx;
+let reusableGain;
 const playSound = () => {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
+  if (!audioCtx) return;
   const oscillator = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   oscillator.type = 'sine';
@@ -230,6 +229,14 @@ document.addEventListener('mousedown', initAudio, { once: true });
 function initAudio() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Create and unlock the audio context with a silent oscillator
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
   }
 }
 </script>
