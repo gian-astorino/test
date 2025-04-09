@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
-  <title>Sfogati</title>
+  <title>Sprite Launcher</title>
   <style>
     html, body {
       overscroll-behavior: none;
@@ -126,9 +126,9 @@ function render() {
 
   ctx.font = "22px 'Varela Round', sans-serif";
   if (hits >= 100) {
-    ctx.fillText("Non ti sembra di esagerare?", 30, 100);
+    wrapText(ctx, "Non ti sembra di esagerare?", 30, 100, canvas.width - 60, 22);
   } else if (hits >= 25) {
-    ctx.fillText("Credo possa bastare, che ne dici di scrivere a Gianluca adesso?", 30, 100);
+    wrapText(ctx, "Credo possa bastare, che ne dici di scrivere a Gianluca adesso?", 30, 100, canvas.width - 60, 22);
   }
   ctx.font = "32px 'Varela Round', sans-serif";
   ctx.fillText(`Sfogati`, 30, 40);
@@ -182,6 +182,24 @@ function render() {
 
   requestAnimationFrame(render);
 }
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  let line = '';
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + ' ';
+    const metrics = ctx.measureText(testLine);
+    const testWidth = metrics.width;
+    if (testWidth > maxWidth && n > 0) {
+      ctx.fillText(line, x, y);
+      line = words[n] + ' ';
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line, x, y);
+}
+
 render();
 
 canvas.addEventListener("mousedown", e => {
