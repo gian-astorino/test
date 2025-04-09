@@ -1,233 +1,217 @@
-import { useRef, useState, useEffect } from "react";
-
-export default function SpriteLauncher() {
-  const canvasRef = useRef(null);
-  const positionRef = useRef({ x: 0, y: 0 });
-  const velocityRef = useRef({ x: 0, y: 0 });
-  const hitsRef = useRef(-1);
-  const [hits, setHits] = useState(-1);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startDrag, setStartDrag] = useState(null);
-  const audioCtxRef = useRef(null);
-  const angleRef = useRef(0);
-  const angularVelocityRef = useRef(0);
-  const spriteRef = useRef(null);
-  const spriteAltRef = useRef(null);
-  const showAltSpriteRef = useRef(false);
-  const spriteSizeRef = useRef({ width: 100, height: 100 });
-  const scale = 0.3;
-
-  const playSound = () => {
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+  <title>Sprite Launcher</title>
+  <style>
+    html, body {
+      overscroll-behavior: none;
+      touch-action: none;
     }
-    const audioCtx = audioCtxRef.current;
-    const oscillator = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(300 + Math.random() * 100, audioCtx.currentTime);
-
-    const now = audioCtx.currentTime;
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.03, now + 0.01);
-    gain.gain.linearRampToValueAtTime(0, now + 0.08);
-
-    oscillator.connect(gain);
-    gain.connect(audioCtx.destination);
-    oscillator.start(now);
-    oscillator.stop(now + 0.1);
-  };
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-
-    const img = new Image();
-    img.src = "https://github.com/gian-astorino/test/blob/main/Sprite%20Ouch%201.png?raw=true";
-    img.onload = () => {
-      spriteRef.current = img;
-      spriteSizeRef.current = { width: img.width * scale, height: img.height * scale };
-      positionRef.current = {
-        x: window.innerWidth / 2 - spriteSizeRef.current.width / 2,
-        y: window.innerHeight - spriteSizeRef.current.height - 1
-      };
-    };
-
-    const imgAlt = new Image();
-    imgAlt.src = "https://github.com/gian-astorino/test/blob/main/Sprite%20Ouch%202.png?raw=true";
-    imgAlt.onload = () => {
-      spriteAltRef.current = imgAlt;
-    };
-
-    const gravity = 0.6;
-    const airFriction = 0.995;
-    const groundFriction = 0.85;
-    const wallBounce = -0.8;
-    const floorBounce = -0.4;
-    const angularFriction = 0.92;
-    let lastHit = { top: false, bottom: false, left: false, right: false };
-
-    function resizeCanvas() {
-      const dpi = window.devicePixelRatio || 1;
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-
-      canvas.width = vw * dpi;
-      canvas.height = vh * dpi;
-      canvas.style.width = `${vw}px`;
-      canvas.style.height = `${vh}px`;
-
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.scale(dpi, dpi);
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      touch-action: none;
+      font-family: 'Varela Round', sans-serif;
     }
-
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
-
-    const render = () => {
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, "#4393E6");
-      gradient.addColorStop(1, "#70C4EB");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const pos = positionRef.current;
-      const vel = velocityRef.current;
-
-      if (
-        Math.abs(angularVelocityRef.current) > 0.001 &&
-        (Math.abs(velocityRef.current.x) > 0.5 || Math.abs(velocityRef.current.y) > 0.5)
-      ) {
-        angleRef.current += angularVelocityRef.current;
-      } else {
-        angularVelocityRef.current = 0;
-      }
-      angularVelocityRef.current *= angularFriction;
-
-      const { width, height } = spriteSizeRef.current;
-
-      ctx.save();
-      ctx.translate(pos.x + width / 2, pos.y + height / 2);
-      ctx.rotate(angleRef.current);
-
-      const sprite = showAltSpriteRef.current && spriteAltRef.current ? spriteAltRef.current : spriteRef.current;
-      if (sprite) {
-        ctx.drawImage(sprite, -width / 2, -height / 2, width, height);
-      }
-      ctx.restore();
-
-      ctx.fillStyle = "#000";
-      ctx.font = "20px 'Varela Round', sans-serif";
-      ctx.fillText(`Hits: ${hitsRef.current}`, 20, 30);
-
-      const onGround = pos.y + height >= window.innerHeight;
-      if (onGround) {
-        vel.x *= groundFriction;
-        angularVelocityRef.current *= 0.85;
-      } else {
-        vel.x *= airFriction;
-      }
-
-      vel.y += gravity;
-      pos.x += vel.x;
-      pos.y += vel.y;
-
-      const velocityThreshold = 0.5;
-
-      const registerHit = (side, rotationBoost) => {
-        hitsRef.current++;
-        showAltSpriteRef.current = true;
-        setTimeout(() => { showAltSpriteRef.current = false; }, 500);
-        setHits(hitsRef.current);
-        angularVelocityRef.current += rotationBoost;
-        playSound();
-        lastHit[side] = true;
-      };
-
-      if (pos.x < 0) {
-        pos.x = 0;
-        vel.x *= wallBounce;
-        if (!lastHit.left && Math.abs(vel.x) > velocityThreshold) {
-          registerHit("left", 0.3);
-        }
-      } else {
-        lastHit.left = false;
-      }
-
-      if (pos.x + width > window.innerWidth) {
-        pos.x = window.innerWidth - width;
-        vel.x *= wallBounce;
-        if (!lastHit.right && Math.abs(vel.x) > velocityThreshold) {
-          registerHit("right", -0.3);
-        }
-      } else {
-        lastHit.right = false;
-      }
-
-      if (pos.y < 0) {
-        pos.y = 0;
-        vel.y *= wallBounce;
-        if (!lastHit.top && Math.abs(vel.y) > velocityThreshold) {
-          registerHit("top", 0.2);
-        }
-      } else {
-        lastHit.top = false;
-      }
-
-      if (pos.y + height > window.innerHeight) {
-        pos.y = window.innerHeight - height;
-        vel.y *= floorBounce;
-        if (!lastHit.bottom && Math.abs(vel.y) > velocityThreshold) {
-          registerHit("bottom", -0.2);
-        }
-      } else {
-        lastHit.bottom = false;
-      }
-
-      requestAnimationFrame(render);
-    };
-
-    render();
-
-    return () => {
-      window.removeEventListener("resize", resizeCanvas);
-    };
-  }, []);
-
-  const handleMouseDown = (e) => {
-    const x = e.clientX;
-    const y = e.clientY;
-    positionRef.current = { x, y };
-    velocityRef.current = { x: 0, y: 0 };
-    angularVelocityRef.current = 0;
-    setIsDragging(true);
-    setStartDrag({ x, y });
-  };
-
-  const handleMouseUp = (e) => {
-    if (isDragging && startDrag) {
-      const endDrag = { x: e.clientX, y: e.clientY };
-      const dx = endDrag.x - startDrag.x;
-      const dy = endDrag.y - startDrag.y;
-      velocityRef.current = { x: dx / 8, y: dy / 8 };
-      angularVelocityRef.current = dx / 100;
+    canvas {
+      display: block;
     }
-    setIsDragging(false);
-    setStartDrag(null);
-  };
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+let position = { x: 0, y: 0 };
+let velocity = { x: 0, y: 0 };
+let angle = 0;
+let angularVelocity = 0;
+let hits = -1;
+let isDragging = false;
+let startDrag = null;
+let sprite = null;
+let spriteAlt = null;
+let showAlt = false;
+const scale = 0.3;
+let spriteSize = { width: 100, height: 100 };
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full"
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onTouchStart={(e) => handleMouseDown(e.touches[0])}
-      onTouchEnd={(e) => handleMouseUp(e.changedTouches[0])}
-      ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full"
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-    />
-  );
+const playSound = () => {
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const oscillator = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  oscillator.type = 'sine';
+  oscillator.frequency.setValueAtTime(300 + Math.random() * 100, audioCtx.currentTime);
+  const now = audioCtx.currentTime;
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.03, now + 0.01);
+  gain.gain.linearRampToValueAtTime(0, now + 0.08);
+  oscillator.connect(gain);
+  gain.connect(audioCtx.destination);
+  oscillator.start(now);
+  oscillator.stop(now + 0.1);
+};
+
+function resizeCanvas() {
+  const dpi = window.devicePixelRatio || 1;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  canvas.width = vw * dpi;
+  canvas.height = vh * dpi;
+  canvas.style.width = `${vw}px`;
+  canvas.style.height = `${vh}px`;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpi, dpi);
 }
+
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+const img = new Image();
+img.src = "https://github.com/gian-astorino/test/blob/main/Sprite%20Ouch%201.png?raw=true";
+img.onload = () => {
+  sprite = img;
+  spriteSize = { width: img.width * scale, height: img.height * scale };
+  position = {
+    x: window.innerWidth / 2 - spriteSize.width / 2,
+    y: window.innerHeight - spriteSize.height - 1
+  };
+};
+
+const imgAlt = new Image();
+imgAlt.src = "https://github.com/gian-astorino/test/blob/main/Sprite%20Ouch%202.png?raw=true";
+imgAlt.onload = () => spriteAlt = imgAlt;
+
+const gravity = 0.6;
+const airFriction = 0.995;
+const groundFriction = 0.85;
+const wallBounce = -0.8;
+const floorBounce = -0.4;
+const angularFriction = 0.92;
+let lastHit = { top: false, bottom: false, left: false, right: false };
+
+function render() {
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, "#4393E6");
+  gradient.addColorStop(1, "#70C4EB");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (
+    Math.abs(angularVelocity) > 0.001 &&
+    (Math.abs(velocity.x) > 0.5 || Math.abs(velocity.y) > 0.5)
+  ) {
+    angle += angularVelocity;
+  } else {
+    angularVelocity = 0;
+  }
+  angularVelocity *= angularFriction;
+
+  ctx.save();
+  ctx.translate(position.x + spriteSize.width / 2, position.y + spriteSize.height / 2);
+  ctx.rotate(angle);
+  const image = showAlt && spriteAlt ? spriteAlt : sprite;
+  if (image) ctx.drawImage(image, -spriteSize.width / 2, -spriteSize.height / 2, spriteSize.width, spriteSize.height);
+  ctx.restore();
+
+  ctx.fillStyle = "#000";
+  ctx.font = "20px 'Varela Round', sans-serif";
+  ctx.fillText(`Hits: ${hits}`, 20, 30);
+
+  const onGround = position.y + spriteSize.height >= window.innerHeight;
+  if (onGround) {
+    velocity.x *= groundFriction;
+    angularVelocity *= 0.85;
+  } else {
+    velocity.x *= airFriction;
+  }
+
+  velocity.y += gravity;
+  position.x += velocity.x;
+  position.y += velocity.y;
+
+  const velocityThreshold = 0.5;
+  const registerHit = (side, boost) => {
+    hits++;
+    showAlt = true;
+    setTimeout(() => { showAlt = false; }, 500);
+    angularVelocity += boost;
+    playSound();
+    lastHit[side] = true;
+  };
+
+  if (position.x < 0) {
+    position.x = 0;
+    velocity.x *= wallBounce;
+    if (!lastHit.left && Math.abs(velocity.x) > velocityThreshold) registerHit("left", 0.3);
+  } else lastHit.left = false;
+
+  if (position.x + spriteSize.width > window.innerWidth) {
+    position.x = window.innerWidth - spriteSize.width;
+    velocity.x *= wallBounce;
+    if (!lastHit.right && Math.abs(velocity.x) > velocityThreshold) registerHit("right", -0.3);
+  } else lastHit.right = false;
+
+  if (position.y < 0) {
+    position.y = 0;
+    velocity.y *= wallBounce;
+    if (!lastHit.top && Math.abs(velocity.y) > velocityThreshold) registerHit("top", 0.2);
+  } else lastHit.top = false;
+
+  if (position.y + spriteSize.height > window.innerHeight) {
+    position.y = window.innerHeight - spriteSize.height;
+    velocity.y *= floorBounce;
+    if (!lastHit.bottom && Math.abs(velocity.y) > velocityThreshold) registerHit("bottom", -0.2);
+  } else lastHit.bottom = false;
+
+  requestAnimationFrame(render);
+}
+render();
+
+canvas.addEventListener("mousedown", e => {
+  isDragging = true;
+  startDrag = { x: e.clientX, y: e.clientY };
+  position = { x: e.clientX, y: e.clientY };
+  velocity = { x: 0, y: 0 };
+  angularVelocity = 0;
+});
+
+canvas.addEventListener("mouseup", e => {
+  if (isDragging && startDrag) {
+    const dx = e.clientX - startDrag.x;
+    const dy = e.clientY - startDrag.y;
+    velocity = { x: dx / 8, y: dy / 8 };
+    angularVelocity = dx / 100;
+  }
+  isDragging = false;
+  startDrag = null;
+});
+
+canvas.addEventListener("touchstart", e => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  isDragging = true;
+  startDrag = { x: touch.clientX, y: touch.clientY };
+  position = { x: touch.clientX, y: touch.clientY };
+  velocity = { x: 0, y: 0 };
+  angularVelocity = 0;
+});
+
+canvas.addEventListener("touchend", e => {
+  const touch = e.changedTouches[0];
+  if (isDragging && startDrag) {
+    const dx = touch.clientX - startDrag.x;
+    const dy = touch.clientY - startDrag.y;
+    velocity = { x: dx / 8, y: dy / 8 * 1.5 };
+    angularVelocity = dx / 100;
+  }
+  isDragging = false;
+  startDrag = null;
+});
+</script>
+</body>
+</html>
