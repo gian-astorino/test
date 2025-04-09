@@ -46,7 +46,9 @@ let position = { x: 0, y: 0 };
 let velocity = { x: 0, y: 0 };
 let angle = 0;
 let angularVelocity = 0;
-let hits = -1;
+let hits = 0;
+let hitCooldown = true;
+setTimeout(() => { hitCooldown = false; }, 1000);
 let isDragging = false;
 let startDrag = null;
 let sprite = null;
@@ -147,7 +149,7 @@ function render() {
 
   const velocityThreshold = 0.5;
   const registerHit = (side, boost) => {
-    hits++;
+    if (!hitCooldown) hits++;
     showAlt = true;
     setTimeout(() => { showAlt = false; }, 500);
     angularVelocity += boost;
