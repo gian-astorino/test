@@ -25,6 +25,21 @@
 <body>
 <canvas id="gameCanvas"></canvas>
 <script>
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound() {
+  const oscillator = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  oscillator.type = 'triangle';
+  oscillator.frequency.setValueAtTime(450 + Math.random() * 100, audioCtx.currentTime);
+  const now = audioCtx.currentTime;
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.05, now + 0.005);
+  gain.gain.linearRampToValueAtTime(0, now + 0.1);
+  oscillator.connect(gain);
+  gain.connect(audioCtx.destination);
+  oscillator.start(now);
+  oscillator.stop(now + 0.12);
+}
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 let position = { x: 0, y: 0 };
@@ -40,23 +55,7 @@ let showAlt = false;
 const scale = 0.2;
 let spriteSize = { width: 100, height: 100 };
 
-let audioCtx;
-let reusableGain;
-const playSound = () => {
-  if (!audioCtx) return;
-  const oscillator = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  oscillator.type = 'sine';
-  oscillator.frequency.setValueAtTime(300 + Math.random() * 100, audioCtx.currentTime);
-  const now = audioCtx.currentTime;
-  gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(0.03, now + 0.01);
-  gain.gain.linearRampToValueAtTime(0, now + 0.08);
-  oscillator.connect(gain);
-  gain.connect(audioCtx.destination);
-  oscillator.start(now);
-  oscillator.stop(now + 0.1);
-};
+
 
 function resizeCanvas() {
   const dpi = window.devicePixelRatio || 1;
@@ -127,9 +126,9 @@ function render() {
 
   ctx.font = "22px 'Varela Round', sans-serif";
   if (hits >= 100) {
-    ctx.fillText("Testo 2", 30, 100);
+    ctx.fillText("Non ti sembra di esagerare?", 30, 100);
   } else if (hits >= 25) {
-    ctx.fillText("Testo 1", 30, 100);
+    ctx.fillText("Credo possa bastare, che ne dici di scrivere a Gianluca adesso?", 30, 100);
   }
   ctx.font = "32px 'Varela Round', sans-serif";
   ctx.fillText(`Sfogati`, 30, 40);
@@ -152,6 +151,7 @@ function render() {
     showAlt = true;
     setTimeout(() => { showAlt = false; }, 500);
     angularVelocity += boost;
+    
     playSound();
     lastHit[side] = true;
   };
@@ -224,21 +224,7 @@ canvas.addEventListener("touchend", e => {
   isDragging = false;
   startDrag = null;
 });
-document.addEventListener('touchstart', initAudio, { once: true });
-document.addEventListener('mousedown', initAudio, { once: true });
-function initAudio() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // Create and unlock the audio context with a silent oscillator
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0, audioCtx.currentTime);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.1);
-  }
-}
+  
 </script>
 </body>
 </html>
